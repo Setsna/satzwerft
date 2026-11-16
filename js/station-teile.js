@@ -76,7 +76,7 @@
     const html = `
       <section class="rundenende${geschafft >= ab ? ' rundenende--geschafft' : ''}" aria-labelledby="h-ende">
         <h2 id="h-ende" class="nurvorlesen">Rundenende</h2>
-        <div class="stempel-gross${geschafft >= ab || hatteSchon ? ' stempel-gross--voll' : ''}${neu ? ' stempel-gross--neu' : ''}" aria-hidden="true">${stempelSvg}</div>
+        <div class="stempel-gross${geschafft >= ab ? ' stempel-gross--voll' : ''}${neu ? ' stempel-gross--neu' : ''}" aria-hidden="true">${stempelSvg}</div>
         <div class="rundenende__satz">${ctx.rioKlein}<p class="rundenende__text">${ctx.esc(text)}</p></div>
         <p class="knopfreihe knopfreihe--mitte">
           <button type="button" class="knopf haupt rundenende__haupt" data-${praefix}="stufe" data-stufe="${haupt.stufe}">${ctx.esc(haupt.text)}</button>

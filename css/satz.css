@@ -8,7 +8,7 @@
   --r-subjekt: #2c5d8f;
   --r-praedikat: #a83a35;
   --r-zeit: #2f6b4b;
-  --r-ort: #a67c00;        /* Gelb (Ingo, 16.11.2026): Linie dunkles Gold, Marke hellgelb mit dunkler Schrift */
+  --r-ort: #8f6a00;        /* Gelb (Ingo, 16.11.2026): Linie dunkles Gold, Marke hellgelb mit dunkler Schrift */
   --r-ort-marke: #e8c547;
   --r-wem: #6e4f2e;        /* Wem braun, Wen lila (Ingo, 16.11.2026) */
   --r-wen: #6a4a8c;
@@ -31,15 +31,27 @@
 .ausgang { color: var(--tinte-leise); }
 .ausgang__wort { font-size: var(--gr-label); font-weight: 700; color: var(--tinte-leise); margin-right: var(--a-xs); }
 .fachwort { margin: var(--a-s) 0 0; padding: var(--a-s) var(--a-m); background: #eef4f8; border: 1px solid #d3e2ec; border-radius: 0.6rem; }
-.rueckmeldung--sanft { color: var(--navy); }
-.rueckmeldung--falsch { color: #8a2d25; }
-.rueckmeldung--richtig { color: #1f5a3d; }
-.rueckmeldung--loesung { color: var(--navy); }
+/* Rückmeldung immer Navy (Rot und Grün gehören den Rollen). Die Art zeigt eine Form davor:
+   richtig = Haken im gefüllten Kreis, noch einmal = offener Kreis, Lösung = Kreis mit Punkt. */
+.rueckmeldung { color: var(--navy); }
+.rueckmeldung--richtig::before, .rueckmeldung--falsch::before, .rueckmeldung--sanft::before, .rueckmeldung--loesung::before {
+  content: ''; display: inline-block; vertical-align: -0.15em; width: 1.05em; height: 1.05em; margin-right: 0.45em;
+  border-radius: 50%; box-sizing: border-box;
+}
+.rueckmeldung--richtig::before {
+  background:
+    linear-gradient(45deg, transparent 46%, #fff 46% 58%, transparent 58%) 30% 62% / 40% 30% no-repeat,
+    linear-gradient(-45deg, transparent 44%, #fff 44% 56%, transparent 56%) 68% 46% / 52% 52% no-repeat,
+    var(--navy);
+}
+.rueckmeldung--falsch::before, .rueckmeldung--sanft::before { border: 3px solid var(--navy); }
+.rueckmeldung--loesung::before { border: 3px solid var(--navy); background: radial-gradient(circle, var(--navy) 0 26%, transparent 28%); }
 .erklaerung { margin-top: var(--a-m); padding: var(--a-m); background: #eef4f8; border-radius: var(--r-knopf); }
 .erklaerung p { margin: 0 0 var(--a-s); }
 .beispiel { font-weight: 700; }
 .antwort-knopf.ist-falsch { color: var(--tinte-leise); text-decoration: line-through; }
 .antworten .antwort-knopf { line-height: 1.3; }
+.loesung-gezeigt .antwort-knopf.ist-richtig { border-style: solid; border-width: 3px; border-color: var(--navy); }
 .rio-satz { display: flex; align-items: center; gap: var(--a-s); }
 .rio-satz p { margin: 0; }
 
@@ -47,13 +59,23 @@
 /* Helling: kühler Grund mit feinen Querbohlen, darauf liegen die Planken */
 .satzbuehne {
   margin: var(--a-m) 0; padding: var(--a-m) var(--a-m) calc(var(--a-m) + 4px);
-  background: repeating-linear-gradient(90deg, transparent 0 46px, var(--helling-linie) 46px 48px), var(--helling);
+  /* zwei Laufschienen, auf denen die Planken liegen */
+  background:
+    linear-gradient(180deg, transparent 0 18px, rgba(11, 49, 85, 0.1) 18px 24px, transparent 24px) top / 100% 100% no-repeat,
+    linear-gradient(0deg, transparent 0 18px, rgba(11, 49, 85, 0.1) 18px 24px, transparent 24px) bottom / 100% 100% no-repeat,
+    var(--helling);
   border: 1px solid #cfdbe1; border-radius: var(--r-papier);
 }
 .satzfeld { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--a-m) var(--a-s); align-items: center; }
 .satzfeld__platz { display: flex; align-items: center; gap: 4px; }
 .satzfeld__zeichen { font-size: var(--gr-title); font-weight: 700; line-height: 1; color: var(--navy); }
-.satzfeld__hilfe { margin: var(--a-s) 0 0; }
+.satzfeld__hilfe { margin: var(--a-m) 0 0; }
+.satzfeld--reihe { column-gap: 0; }
+.satzfeld--reihe .satzfeld__luecke { width: 40px; display: flex; justify-content: center; }
+.satzfeld--reihe { padding-left: 40px; }
+.satzfeld--reihe .satzfeld__luecke:first-child { margin-left: -40px; }
+.satzfeld__luecke:not(.satzfeld__luecke--offen):not(.satzfeld__luecke--nah) .einfuege-stelle { visibility: hidden; }
+.satzfeld__luecke--nah .einfuege-stelle { visibility: visible; background: rgba(11, 49, 85, 0.12); border-style: solid; border-color: var(--navy); }
 
 /* ---------- Kärtchen ---------- */
 .kachel {
@@ -75,25 +97,19 @@
 }
 .satzfeld--markieren .kachel, .kachel:disabled { touch-action: manipulation; }
 .kachel:disabled { cursor: default; opacity: 1; }
-.kachel:hover:not(:disabled) { transform: translateY(-2px); }
+@media (hover: hover) { .kachel:hover:not(:disabled) { transform: translateY(-2px); } }
 .kachel:focus-visible { outline: 3px solid var(--welle); outline-offset: 3px; }
 .kachel--gewaehlt { border-color: var(--navy); border-width: 3px; transform: translateY(-6px); box-shadow: 0 10px 16px rgba(11, 49, 85, 0.28); }
 .kachel--zieht { z-index: 5; opacity: 0.94; box-shadow: 0 14px 26px rgba(11, 49, 85, 0.32); transition: none; }
-/* Einfügemarke beim Ziehen: Navy-Balken vor oder hinter dem Kärtchen, ohne das Feld zu verschieben */
-.kachel--ziel-vor::before, .kachel--ziel-nach::after {
-  content: ''; position: absolute; top: 2px; bottom: 2px; width: 5px; border-radius: 3px; background: var(--navy);
-}
-.kachel--ziel-vor::before { left: calc(-1 * var(--a-s) / 2 - 5px); }
-.kachel--ziel-nach::after { right: calc(-1 * var(--a-s) / 2 - 5px); }
 /* Lücken zum Antippen, sobald ein Kärtchen gewählt ist */
 .satzfeld__luecke { display: flex; }
 .einfuege-stelle {
-  min-width: var(--tippen); min-height: 56px; padding: 0 6px;
+  flex: none; width: var(--tippen); min-height: 56px; padding: 0; margin: 0 -4px;
   display: inline-flex; align-items: center; justify-content: center;
   background: rgba(11, 49, 85, 0.06); border: 2px dashed rgba(11, 49, 85, 0.55); border-radius: 0.5rem;
   cursor: pointer; touch-action: manipulation;
 }
-.einfuege-stelle:hover { background: rgba(11, 49, 85, 0.12); }
+@media (hover: hover) { .einfuege-stelle:hover { background: rgba(11, 49, 85, 0.12); } }
 .einfuege-stelle:focus-visible { outline: 3px solid var(--welle); outline-offset: 2px; }
 .einfuege-stelle__strich { width: 4px; height: 32px; border-radius: 2px; background: var(--navy); }
 .kachel--austausch { border-style: dashed; border-color: var(--navy); border-width: 3px; }
@@ -119,22 +135,23 @@
 /* ---------- Trennen: Wörter und Strich-Knöpfe ---------- */
 .satzfeld--trennen { display: flex; flex-wrap: wrap; align-items: center; row-gap: var(--a-m); margin: 0; font-size: var(--gr-title); font-weight: 700; color: var(--navy); }
 .wort { padding: 0.2rem 0.1rem; }
-.wort--zeichen { padding-left: 0; }
+.wort--zeichen { padding-left: 0; margin-left: -6px; }
 .luecke {
   width: var(--tippen); height: 64px; margin: 0 -4px;
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent; border: 0; border-radius: 0.5rem; cursor: pointer; touch-action: manipulation;
 }
-.luecke:hover:not(:disabled) { background: rgba(45, 111, 152, 0.1); }
+@media (hover: hover) { .luecke:hover:not(:disabled) { background: rgba(45, 111, 152, 0.1); } }
 .luecke:focus-visible { outline: 3px solid var(--welle); outline-offset: 0; }
-.luecke__strich { width: 4px; height: 1.1em; border-radius: 2px; background: transparent; border: 2px dotted rgba(45, 111, 152, 0.75); transition: transform var(--dauer) var(--kurve); }
-.luecke--strich .luecke__strich { height: 1.3em; background: var(--navy); border: 0; }
+.luecke:not(.luecke--strich) { margin: 0 -10px; }
+.luecke__strich { width: 0; height: 1.4em; border-left: 2px dashed rgba(45, 111, 152, 0.6); transition: transform var(--dauer) var(--kurve); }
+.luecke--strich .luecke__strich { width: 6px; height: 1.6em; border: 0; border-radius: 3px; background: var(--navy); }
 .luecke--zuviel { background: rgba(11, 49, 85, 0.1); }
 .luecke--fehlt { outline: 3px dashed var(--welle); outline-offset: -6px; }
 
 /* ---------- Schritte (1, 2) ---------- */
 .schritte { display: flex; gap: var(--a-s); margin: 0 0 var(--a-s); }
-.schritt { width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--kachel-rand); font-weight: 700; color: var(--tinte-leise); }
+.schritt { width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--holz-kante); font-weight: 700; color: var(--tinte-leise); }
 .schritt--jetzt { border-color: var(--navy); color: var(--navy); }
 .schritt--fertig { background: var(--navy); border-color: var(--navy); color: #fff; }
 
@@ -166,12 +183,19 @@
   .kachel { padding: 0.45rem 0.65rem; }
   .satzfeld--trennen { font-size: var(--gr-text); }
 }
-/* Tafel und Beamer: breitere Werkbank, Satz in der Mitte */
+/* Tafel und Beamer: breitere Werkbank, Satz in der Mitte, Marken größer */
 @media (min-width: 1400px) and (orientation: landscape) {
   .aufgabe.werkbank { max-width: 66rem; }
   .satzbuehne { padding: var(--a-l); }
   .satzfeld { justify-content: center; }
+  .kachel__marke { font-size: max(0.9375rem, calc(20 * var(--s))); }
 }
+/* iPad hochkant: mehr Raum für den Satz */
+@media (orientation: portrait) and (min-width: 700px) {
+  .satzbuehne { min-height: 14rem; display: flex; flex-direction: column; justify-content: center; }
+}
+/* Unterzeile im Stationskopf: heller Hof, damit sie über jedem Bildausschnitt lesbar bleibt */
+.kopf--station .unterzeile { text-shadow: 0 0 4px rgba(245, 248, 250, 0.95), 0 0 10px rgba(245, 248, 250, 0.85); }
 @media (prefers-reduced-motion: reduce) {
   .kachel, .luecke__strich { transition: none; }
   .kachel:hover:not(:disabled), .kachel--gewaehlt { transform: none; }

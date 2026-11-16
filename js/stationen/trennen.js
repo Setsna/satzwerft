@@ -25,6 +25,11 @@
         <h2 id="tr-frage" class="frage">Welche Wörter bleiben zusammen?</h2>
         <p class="auftrag">Setz einen Strich zwischen zwei Satzglieder.</p>
         <div class="satzbuehne" id="tr-feld"></div>`);
+      /* Gelöst: Die Wortgruppen werden zu Planken. So sieht man, dass Trennen und Umstellen dasselbe zeigen. */
+      if (s.fertig) {
+        SA.kacheln.markieren(ort.querySelector('#tr-feld'), { satz: a.satz, reihe: Z().grund(a.satz), fest: {}, gesperrt: true });
+        return;
+      }
       SA.kacheln.trennen(ort.querySelector('#tr-feld'), {
         satz: a.satz, striche: s.striche, gesperrt: s.fertig, markiert: s.markiert,
         aenderung: neu => { s.striche = neu; s.markiert = null; }

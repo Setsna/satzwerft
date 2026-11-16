@@ -50,7 +50,7 @@
         const fertigeStufen = a.gesucht.length > 1 ? `<p class="schritte" aria-label="Schritt ${Math.min(s.schritt + 1, a.gesucht.length)} von ${a.gesucht.length}">${a.gesucht.map((r, i) => `<span class="schritt${i < s.schritt || s.fertig ? ' schritt--fertig' : ''}${i === s.schritt && !s.fertig ? ' schritt--jetzt' : ''}" aria-hidden="true">${i + 1}</span>`).join('')}</p>` : '';
         ort.insertAdjacentHTML('beforeend', `
           ${fertigeStufen}
-          <h2 id="${api.P}-frage" class="frage">${s.fertig ? 'Geschafft.' : 'Frag: ' + esc(frage(a, rolle))}</h2>
+          <h2 id="${api.P}-frage" class="frage">${s.fertig ? 'Geschafft: ' + esc(a.gesucht.map(N).join(' und ')) + '.' : 'Frag: ' + esc(frage(a, rolle))}</h2>
           ${s.fertig ? '' : `<p class="auftrag">${esc(def.auftrag ? def.auftrag(a, rolle) : auftrag[rolle])}</p>`}
           <div class="satzbuehne" id="${api.P}-feld"></div>`);
         SA.kacheln.markieren(ort.querySelector(`#${api.P}-feld`), {

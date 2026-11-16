@@ -145,7 +145,7 @@
     const k = ST.aktiv();
     if (!k) { ansichtCode(); return; }
     zeigen(`
-      ${kopf('Hallo, <span id="vorname"></span>!')}
+      ${kopf('Hallo, <span id="vorname"></span>!', true)}
       <p id="netz-zeile" class="netz-zeile" role="status" hidden></p>
       ${[3, 4].map(kl => { const liste = C.stationen.filter(s => s.klasse === kl); return `
       <section aria-labelledby="h-stationen-${kl}" class="stationen-gruppe">

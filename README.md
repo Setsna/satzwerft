@@ -58,4 +58,5 @@ Die Kinder melden sich mit demselben Zugangscode an wie im Perlentaucher. Gespei
 
 ## Stand
 
-- 16.11.2026: lokal gebaut, `?v=1`, alle sieben Stationen, Werftbuch und Urkunde. Noch nicht veröffentlicht.
+- 16.11.2026: erste Veröffentlichung, `?v=1`, alle sieben Stationen, Werftbuch und Urkunde. GitHub Pages aus `main`.
+- 16.11.2026: `?v=2`, Design-Review Runde 2 (Lücken fest im Satzfeld, Rückmeldung in Navy mit Zeichen, Ziehen mit sichtbarer Marke, Trennen deutlicher und gelöst als Planken, Laufschienen, Rio auf der Startseite).

@@ -14,6 +14,7 @@
   const Z = () => SA.satz;
   const ROLLE_MARKE = { subjekt: 'Subjekt', praedikat: 'Prädikat', zeit: 'Zeit', ort: 'Ort', wem: 'Wem', wen: 'Wen', sonstiges: '' };
   const ruhig = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let hinweisGesehen = false;   /* Bedienhinweis der Umstellprobe nur bis zum ersten Versetzen (je Seitenaufruf) */
 
   const el = (tag, klasse, text) => { const e = document.createElement(tag); if (klasse) e.className = klasse; if (text !== undefined) e.textContent = text; return e; };
   function kachelKnopf(text, rolle) {
@@ -27,8 +28,10 @@
   /* ---------- Umstellen ----------
      opt: { satz, reihe (Indizes), art: 'aussage'|'frage', gesperrt, aenderung(reihe, text), rollen: { index: rolle } }
      Bedienung (Design-Review 16.11.2026, P0):
-     - Tippen: Kärtchen antippen, dann erscheinen Lücken (echte Knöpfe) vor, zwischen und hinter den Kärtchen. Lücke antippen = dorthin.
-       Ein anderes Kärtchen antippen wählt dieses.
+     - Tippen: Kärtchen antippen, dann werden Lücken (echte Knöpfe) vor, zwischen und hinter den Kärtchen sichtbar. Lücke antippen = dorthin.
+       Ein anderes Kärtchen antippen wählt dieses. Die Lücken stehen immer im Satzfeld (unsichtbar, ohne Funktion),
+       damit beim Wählen nichts springt (Design-Review Runde 2, P1).
+     - Der Bedienhinweis steht nur, bis zum ersten Mal ein Kärtchen versetzt wurde (je Seitenaufruf).
      - Tasten: Pfeil links/rechts, Pos1, Ende verschieben das gewählte Kärtchen, Escape hebt die Wahl auf.
      - Ziehen: Pointer-Events, eine Einfügemarke zeigt, wo das Kärtchen landet.
      - Jedes Versetzen springt in einem ruhigen Bogen (300 ms, nur transform), bei reduzierter Bewegung ohne (Ingo, 16.11.2026). */
@@ -39,29 +42,33 @@
     feld.setAttribute('aria-label', 'Satz zum Umstellen');
     ort.textContent = '';
     ort.appendChild(feld);
-    const hilfe = el('p', 'leise satzfeld__hilfe', 'Tippe ein Kärtchen an. Dann tippe auf die Lücke, wo es hin soll. Du kannst es auch ziehen.');
+    const hilfe = el('p', 'leise satzfeld__hilfe', 'Tippe ein Kärtchen an. Dann erscheinen Lücken. Tippe auf die Lücke, wo es hin soll. Du kannst es auch ziehen.');
     hilfe.id = 'satzfeld-hilfe-' + s.id;
-    if (!opt.gesperrt) ort.appendChild(hilfe);
+    if (!opt.gesperrt && !hinweisGesehen) ort.appendChild(hilfe);
 
     function text() { return Z().text(s, r, opt.art); }
     const kartenText = (gi, pos) => Z().gliedText(s, gi, pos);
-    function luecke(ziel) {
-      const li = el('li', 'satzfeld__luecke');
+    /* Lücke ziel (0 … r.length): offen = sichtbar und bedienbar. Sonst unsichtbar, aber mit gleicher Breite. */
+    function luecke(ziel, offen) {
+      const li = el('li', 'satzfeld__luecke' + (offen ? ' satzfeld__luecke--offen' : ''));
+      li.dataset.ziel = ziel;
       const b = el('button', 'einfuege-stelle');
       b.type = 'button';
       b.dataset.ziel = ziel;
       const wohin = ziel === 0 ? 'ganz nach vorn' : ziel >= r.length ? 'ans Ende' : `vor „${kartenText(r[ziel], ziel)}“`;
       b.setAttribute('aria-label', `Hierhin: ${wohin}`);
+      if (!offen) { b.disabled = true; b.tabIndex = -1; li.setAttribute('aria-hidden', 'true'); }
       b.appendChild(el('span', 'einfuege-stelle__strich'));
       li.appendChild(b);
       return li;
     }
+    /* Offen sind alle Lücken außer direkt vor und hinter dem gewählten Kärtchen (dort ändert sich nichts) */
+    const offen = ziel => gewaehlt >= 0 && ziel !== gewaehlt && ziel !== gewaehlt + 1;
     function zeichnen(fokusStelle) {
       feld.textContent = '';
       feld.classList.toggle('satzfeld--waehlt', gewaehlt >= 0);
       r.forEach((gi, pos) => {
-        /* Lücke vor jedem Kärtchen, außer direkt vor und hinter dem gewählten (dort ändert sich nichts) */
-        if (gewaehlt >= 0 && pos !== gewaehlt && pos !== gewaehlt + 1) feld.appendChild(luecke(pos));
+        feld.appendChild(luecke(pos, offen(pos)));
         const li = el('li', 'satzfeld__platz');
         const b = kachelKnopf(kartenText(gi, pos), opt.rollen && opt.rollen[gi]);
         b.dataset.pos = pos;
@@ -76,7 +83,7 @@
         if (pos === r.length - 1) { const z = el('span', 'satzfeld__zeichen', opt.art === 'frage' ? '?' : '.'); z.setAttribute('aria-hidden', 'true'); li.appendChild(z); }
         feld.appendChild(li);
       });
-      if (gewaehlt >= 0 && gewaehlt !== r.length - 1) feld.appendChild(luecke(r.length));
+      feld.appendChild(luecke(r.length, offen(r.length)));
       if (fokusStelle !== undefined) { const b = feld.querySelector(`.kachel[data-pos="${fokusStelle}"]`); if (b) b.focus({ preventScroll: true }); }
     }
     /* Lagen aller Kärtchen merken (für den Bogen) */
@@ -103,6 +110,7 @@
       const [x] = r.splice(von, 1);
       r.splice(nach, 0, x);
       gewaehlt = behalten ? nach : -1;
+      if (!hinweisGesehen) { hinweisGesehen = true; }
       zeichnen(nach);
       bogen(lage, x);
       if (opt.aenderung) opt.aenderung(r.slice(), text());
@@ -157,12 +165,14 @@
       }
       return andere.length;
     }
+    /* Einfügemarke: die Lücke an der Zielstelle wird sichtbar (sie steht ohnehin im Feld, nichts verschiebt sich).
+       stelle zählt ohne das gezogene Kärtchen, die Lücken zählen mit ihm. */
     function markeSetzen(stelle) {
-      feld.querySelectorAll('.kachel--ziel-vor, .kachel--ziel-nach').forEach(k => k.classList.remove('kachel--ziel-vor', 'kachel--ziel-nach'));
-      if (stelle === null) return;
-      const andere = [...feld.querySelectorAll('.kachel')].filter(k => k !== ziehen.b);
-      if (stelle < andere.length) andere[stelle].classList.add('kachel--ziel-vor');
-      else if (andere.length) andere[andere.length - 1].classList.add('kachel--ziel-nach');
+      feld.querySelectorAll('.satzfeld__luecke--nah').forEach(l => l.classList.remove('satzfeld__luecke--nah'));
+      if (stelle === null || stelle === ziehen.von) return;
+      const ziel = stelle < ziehen.von ? stelle : stelle + 1;
+      const l = feld.querySelector(`.satzfeld__luecke[data-ziel="${ziel}"]`);
+      if (l) l.classList.add('satzfeld__luecke--nah');
     }
     feld.addEventListener('pointermove', e => {
       if (!ziehen.b || e.pointerId !== ziehen.id) return;
@@ -170,13 +180,15 @@
       if (!ziehen.aktiv && Math.hypot(dx, dy) < 10) return;
       if (!ziehen.aktiv) { ziehen.aktiv = true; try { ziehen.b.setPointerCapture(e.pointerId); } catch (x) { /* egal */ } ziehen.b.classList.add('kachel--zieht'); feld.classList.add('satzfeld--zieht'); }
       e.preventDefault();
-      ziehen.b.style.transform = `translate(${dx}px, ${dy}px)`;
-      markeSetzen(zielStelle(e.clientX, e.clientY));
+      /* Für die Zielstelle zählt der Mittelpunkt des getragenen Kärtchens, nicht der Finger */
+      /* Kärtchen über dem Finger tragen, damit Finger und Kärtchen die Marke nicht verdecken */
+      ziehen.b.style.transform = `translate(${dx}px, ${dy - Math.round(ziehen.b.offsetHeight * 0.8)}px)`;
+      markeSetzen(zielStelle(e.clientX, e.clientY - Math.round(ziehen.b.offsetHeight * 0.8)));
     });
     function loslassen(e, abbrechen) {
       if (!ziehen.b || e.pointerId !== ziehen.id) return;
       const war = ziehen.aktiv, von = ziehen.von;
-      const nach = abbrechen || !war ? von : zielStelle(e.clientX, e.clientY);
+      const nach = abbrechen || !war ? von : zielStelle(e.clientX, e.clientY - Math.round(ziehen.b.offsetHeight * 0.8));
       const vorher = war ? lagen() : null;   /* mit der Lage unter dem Finger, damit der Bogen dort beginnt */
       markeSetzen(null);
       ziehen.b.style.transform = '';
