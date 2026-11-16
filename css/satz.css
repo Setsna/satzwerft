@@ -1,0 +1,179 @@
+/* Satzwerft: Kärtchen, Satzfeld, Rollen der Satzglieder, Stationsbilder.
+   Kärtchen sind helle Holzplanken, das Satzfeld ist der Helling (Ingo, 16.11.2026, nach dem Design-Review).
+   Rollenfarben (Ingo, 16.11.2026): Subjekt blau, Prädikat rot, Zeitbestimmung grün, Ortsbestimmung gelb, Wem braun, Wen lila, gedämpft.
+   Nie nur Farbe: jede Rolle hat zusätzlich eine Beschriftung (Marke) und eine eigene Linie unter dem Kärtchen.
+   Bewegung nur über transform und opacity. Keine Inline-Stile (CSP style-src 'self'). */
+
+:root {
+  --r-subjekt: #2c5d8f;
+  --r-praedikat: #a83a35;
+  --r-zeit: #2f6b4b;
+  --r-ort: #a67c00;        /* Gelb (Ingo, 16.11.2026): Linie dunkles Gold, Marke hellgelb mit dunkler Schrift */
+  --r-ort-marke: #e8c547;
+  --r-wem: #6e4f2e;        /* Wem braun, Wen lila (Ingo, 16.11.2026) */
+  --r-wen: #6a4a8c;
+  /* Holz der Planken: hell und ruhig, Navy-Schrift darauf 9:1; Kante gegen den Helling über 3:1 */
+  --holz-hell: #f1e2c3;
+  --holz: #e6d0a6;
+  --holz-kante: #8d6a42;
+  --holz-maser: rgba(120, 82, 40, 0.07);
+  --helling: #e7eef1;
+  --helling-linie: rgba(11, 49, 85, 0.08);
+  --werkbank: #fbfaf5;
+}
+
+/* ---------- Werkbank: die helle Arbeitsfläche ---------- */
+.aufgabe.werkbank { max-width: 52rem; margin: 0 auto; background: var(--werkbank); }
+.werkbank__inhalt > :first-child { margin-top: 0; }
+.frage { font-family: var(--schrift-text); font-size: var(--gr-title); line-height: 1.3; margin: 0 0 var(--a-s); }
+.auftrag { margin: 0 0 var(--a-m); }
+.ausgang, .vorlesen { margin: var(--a-m) 0; font-size: var(--gr-text); }
+.ausgang { color: var(--tinte-leise); }
+.ausgang__wort { font-size: var(--gr-label); font-weight: 700; color: var(--tinte-leise); margin-right: var(--a-xs); }
+.fachwort { margin: var(--a-s) 0 0; padding: var(--a-s) var(--a-m); background: #eef4f8; border: 1px solid #d3e2ec; border-radius: 0.6rem; }
+.rueckmeldung--sanft { color: var(--navy); }
+.rueckmeldung--falsch { color: #8a2d25; }
+.rueckmeldung--richtig { color: #1f5a3d; }
+.rueckmeldung--loesung { color: var(--navy); }
+.erklaerung { margin-top: var(--a-m); padding: var(--a-m); background: #eef4f8; border-radius: var(--r-knopf); }
+.erklaerung p { margin: 0 0 var(--a-s); }
+.beispiel { font-weight: 700; }
+.antwort-knopf.ist-falsch { color: var(--tinte-leise); text-decoration: line-through; }
+.antworten .antwort-knopf { line-height: 1.3; }
+.rio-satz { display: flex; align-items: center; gap: var(--a-s); }
+.rio-satz p { margin: 0; }
+
+/* ---------- Satzfeld ---------- */
+/* Helling: kühler Grund mit feinen Querbohlen, darauf liegen die Planken */
+.satzbuehne {
+  margin: var(--a-m) 0; padding: var(--a-m) var(--a-m) calc(var(--a-m) + 4px);
+  background: repeating-linear-gradient(90deg, transparent 0 46px, var(--helling-linie) 46px 48px), var(--helling);
+  border: 1px solid #cfdbe1; border-radius: var(--r-papier);
+}
+.satzfeld { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--a-m) var(--a-s); align-items: center; }
+.satzfeld__platz { display: flex; align-items: center; gap: 4px; }
+.satzfeld__zeichen { font-size: var(--gr-title); font-weight: 700; line-height: 1; color: var(--navy); }
+.satzfeld__hilfe { margin: var(--a-s) 0 0; }
+
+/* ---------- Kärtchen ---------- */
+.kachel {
+  position: relative;
+  min-height: 56px; min-width: var(--tippen);
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 0.5rem 0.95rem;
+  font: 700 max(var(--gr-text), calc(32 * var(--s)))/1.15 var(--schrift-text);
+  color: var(--navy);
+  /* Holzplanke: feine Maserung längs, oben etwas heller */
+  background:
+    repeating-linear-gradient(178deg, transparent 0 7px, var(--holz-maser) 7px 8px, transparent 8px 15px),
+    linear-gradient(180deg, var(--holz-hell), var(--holz));
+  border: 2px solid var(--holz-kante); border-radius: 0.4rem;
+  box-shadow: 0 3px 6px rgba(70, 48, 22, 0.22);
+  cursor: pointer;
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  transition: transform var(--dauer) var(--kurve), opacity var(--dauer) var(--kurve);
+}
+.satzfeld--markieren .kachel, .kachel:disabled { touch-action: manipulation; }
+.kachel:disabled { cursor: default; opacity: 1; }
+.kachel:hover:not(:disabled) { transform: translateY(-2px); }
+.kachel:focus-visible { outline: 3px solid var(--welle); outline-offset: 3px; }
+.kachel--gewaehlt { border-color: var(--navy); border-width: 3px; transform: translateY(-6px); box-shadow: 0 10px 16px rgba(11, 49, 85, 0.28); }
+.kachel--zieht { z-index: 5; opacity: 0.94; box-shadow: 0 14px 26px rgba(11, 49, 85, 0.32); transition: none; }
+/* Einfügemarke beim Ziehen: Navy-Balken vor oder hinter dem Kärtchen, ohne das Feld zu verschieben */
+.kachel--ziel-vor::before, .kachel--ziel-nach::after {
+  content: ''; position: absolute; top: 2px; bottom: 2px; width: 5px; border-radius: 3px; background: var(--navy);
+}
+.kachel--ziel-vor::before { left: calc(-1 * var(--a-s) / 2 - 5px); }
+.kachel--ziel-nach::after { right: calc(-1 * var(--a-s) / 2 - 5px); }
+/* Lücken zum Antippen, sobald ein Kärtchen gewählt ist */
+.satzfeld__luecke { display: flex; }
+.einfuege-stelle {
+  min-width: var(--tippen); min-height: 56px; padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(11, 49, 85, 0.06); border: 2px dashed rgba(11, 49, 85, 0.55); border-radius: 0.5rem;
+  cursor: pointer; touch-action: manipulation;
+}
+.einfuege-stelle:hover { background: rgba(11, 49, 85, 0.12); }
+.einfuege-stelle:focus-visible { outline: 3px solid var(--welle); outline-offset: 2px; }
+.einfuege-stelle__strich { width: 4px; height: 32px; border-radius: 2px; background: var(--navy); }
+.kachel--austausch { border-style: dashed; border-color: var(--navy); border-width: 3px; }
+.kachel__text { display: block; }
+.kachel__marke { display: block; font-size: 0.9375rem; line-height: 1.3; font-weight: 700; padding: 0 0.4rem; border-radius: 0.3rem; color: #fff; }
+
+/* Rollen: Farbe + Linie + Marke */
+.kachel--rolle { border-bottom-width: 6px; }
+.rolle-subjekt { border-color: var(--r-subjekt); border-bottom-style: solid; }
+.rolle-praedikat { border-color: var(--r-praedikat); border-bottom-style: double; border-bottom-width: 8px; }
+.rolle-zeit { border-color: var(--r-zeit); border-bottom-style: dashed; }
+.rolle-ort { border-color: var(--r-ort); border-bottom-style: dotted; border-bottom-width: 7px; }
+.rolle-wem { border-color: var(--r-wem); border-bottom-style: dashed; border-top-style: dashed; }
+.rolle-wen { border-color: var(--r-wen); border-bottom-style: solid; border-bottom-width: 3px; }
+.rolle-wen .kachel__text { text-decoration: underline wavy var(--r-wen) 2px; text-underline-offset: 6px; }
+.rolle-subjekt .kachel__marke { background: var(--r-subjekt); }
+.rolle-praedikat .kachel__marke { background: var(--r-praedikat); }
+.rolle-zeit .kachel__marke { background: var(--r-zeit); }
+.rolle-ort .kachel__marke { background: var(--r-ort-marke); color: var(--navy); }
+.rolle-wem .kachel__marke { background: var(--r-wem); }
+.rolle-wen .kachel__marke { background: var(--r-wen); }
+
+/* ---------- Trennen: Wörter und Strich-Knöpfe ---------- */
+.satzfeld--trennen { display: flex; flex-wrap: wrap; align-items: center; row-gap: var(--a-m); margin: 0; font-size: var(--gr-title); font-weight: 700; color: var(--navy); }
+.wort { padding: 0.2rem 0.1rem; }
+.wort--zeichen { padding-left: 0; }
+.luecke {
+  width: var(--tippen); height: 64px; margin: 0 -4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; border-radius: 0.5rem; cursor: pointer; touch-action: manipulation;
+}
+.luecke:hover:not(:disabled) { background: rgba(45, 111, 152, 0.1); }
+.luecke:focus-visible { outline: 3px solid var(--welle); outline-offset: 0; }
+.luecke__strich { width: 4px; height: 1.1em; border-radius: 2px; background: transparent; border: 2px dotted rgba(45, 111, 152, 0.75); transition: transform var(--dauer) var(--kurve); }
+.luecke--strich .luecke__strich { height: 1.3em; background: var(--navy); border: 0; }
+.luecke--zuviel { background: rgba(11, 49, 85, 0.1); }
+.luecke--fehlt { outline: 3px dashed var(--welle); outline-offset: -6px; }
+
+/* ---------- Schritte (1, 2) ---------- */
+.schritte { display: flex; gap: var(--a-s); margin: 0 0 var(--a-s); }
+.schritt { width: 2rem; height: 2rem; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--kachel-rand); font-weight: 700; color: var(--tinte-leise); }
+.schritt--jetzt { border-color: var(--navy); color: var(--navy); }
+.schritt--fertig { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+.werkbank__unten .knopfreihe { margin-bottom: 0; }
+.kachel-antwort { justify-content: center; text-align: center; font-weight: 700; background: linear-gradient(180deg, var(--holz-hell), var(--holz)); border-color: var(--holz-kante); }
+
+/* ---------- Startseite: Gruppen und Stationsbilder ---------- */
+.stationen-gruppe { margin-top: var(--a-l); }
+.gruppe-titel { display: table; margin: 0 auto var(--a-m); padding: 0.15em 0.9em; font-family: var(--schrift-name); font-weight: 400; color: #fff; font-size: var(--gr-title); text-align: center; background: rgba(11, 49, 85, 0.72); border: 1px solid var(--glas-kante); border-radius: 999px; -webkit-backdrop-filter: blur(6px) saturate(140%); backdrop-filter: blur(6px) saturate(140%); }
+.sym .sym-kachel { fill: #f3ecdc; stroke: rgba(255, 255, 255, 0.95); stroke-width: 1.6; }
+.sym .sym-kachel.sym-subjekt { fill: #dbe6f1; }
+.sym .sym-kachel.sym-praedikat { fill: #f2dcda; }
+.sym .sym-unter-subjekt { stroke: #8fb7df; stroke-width: 3.2; }
+.sym .sym-unter-praedikat { stroke: #e9a39e; stroke-width: 2.4; }
+.sym .sym-pfeil, .sym .sym-uhr, .sym .sym-pin, .sym .sym-paket { fill: none; stroke: rgba(255, 255, 255, 0.92); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.sym .sym-zeile { stroke: rgba(255, 255, 255, 0.7); stroke-width: 2; stroke-dasharray: 6 5; }
+.sym .sym-strich { stroke: #e9a39e; stroke-width: 4.5; stroke-linecap: round; }
+.sym .sym-plus { stroke: #f3ecdc; stroke-width: 5; stroke-linecap: round; }
+.sym .sym-haken { fill: none; stroke: #f3ecdc; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Stempelmotive (im Raster 100 × 100) */
+.stempel-bild .stempel__kachel, .stempel-bild .stempel__pfeil, .stempel-bild .stempel__linie, .stempel-bild .stempel__unter, .stempel-bild .stempel__unter2,
+.stempel-bild .stempel__uhr, .stempel-bild .stempel__pin, .stempel-bild .stempel__lupe { fill: none; stroke: currentColor; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.stempel-bild .stempel__strich, .stempel-bild .stempel__plus, .stempel-bild .stempel__haken { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.stempel-bild .stempel__frage { fill: currentColor; font: 700 22px var(--schrift-text); }
+
+@media (max-width: 560px) {
+  .satzbuehne { padding: var(--a-s); }
+  .kachel { padding: 0.45rem 0.65rem; }
+  .satzfeld--trennen { font-size: var(--gr-text); }
+}
+/* Tafel und Beamer: breitere Werkbank, Satz in der Mitte */
+@media (min-width: 1400px) and (orientation: landscape) {
+  .aufgabe.werkbank { max-width: 66rem; }
+  .satzbuehne { padding: var(--a-l); }
+  .satzfeld { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kachel, .luecke__strich { transition: none; }
+  .kachel:hover:not(:disabled), .kachel--gewaehlt { transform: none; }
+}
+.station__name { -webkit-hyphens: auto; hyphens: auto; overflow-wrap: normal; word-break: normal; }
